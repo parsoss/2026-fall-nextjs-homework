@@ -4,7 +4,7 @@ import SortableLectureList from "./components/sortable_lecture_list";
 
 export default function Homework3Page() {
   return (
-    <main className="min-h-screen bg-[#f9f0f0] p-6 md:p-8 flex items-center justify-center">
+    <main className="min-h-screen bg-[#f9f0f0] text-gray-900 p-6 md:p-8 flex items-center justify-center">
       <section className="w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-lg">
         <header className="border-b border-pink-100 bg-[#fffafa] p-4">
           <h1 className="text-2xl font-semibold text-gray-800">Homework 3</h1>
