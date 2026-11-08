@@ -1,16 +1,75 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+type SelectedTimeRange = {
+  day: number;
+  startMinute: number;
+  endMinute: number;
+};
 
 const TimeTableOTL: React.FC = () => {
 
-  // ---------------- Implementaion -----------------------
+  const [selectedRange, setSelectedRange] = useState<SelectedTimeRange | null>(null);
+  const dragAnchor = useRef<{ day: number; minute: number } | null>(null);
+  const timetableSurface = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const finishDragging = () => {
+      dragAnchor.current = null;
+    }; // 마우스 놓으면 선택 해제
 
+    const clearOutsideSelection = (clickEvent: MouseEvent) => {
+      if (
+        clickEvent.target instanceof Node &&
+        !timetableSurface.current?.contains(clickEvent.target)
+      ) {
+        setSelectedRange(null);
+        finishDragging();
+      }
+    };
 
-  // ------------------------------------------------------
+    document.addEventListener('mouseup', finishDragging);
+    document.addEventListener('mousedown', clearOutsideSelection);
 
+    return () => {
+      document.removeEventListener('mouseup', finishDragging);
+      document.removeEventListener('mousedown', clearOutsideSelection);
+    };
+  }, []);
+
+  const startSelecting = (
+    mouseEvent: React.MouseEvent<HTMLDivElement>,
+    day: number,
+    minute: number,
+  ) => {
+    if (mouseEvent.button !== 0) return;
+
+    mouseEvent.preventDefault(); // 다른거 선택 방지
+    dragAnchor.current = { day, minute };
+    setSelectedRange({ day, startMinute: minute, endMinute: minute });
+  };
+
+  const extendSelection = (
+    mouseEvent: React.MouseEvent<HTMLDivElement>,
+    day: number,
+    minute: number,
+  ) => {
+    if ((mouseEvent.buttons & 1) === 0) {
+      dragAnchor.current = null;
+      return;
+    }
+
+    const anchor = dragAnchor.current;
+    if (!anchor || anchor.day !== day) return;
+
+    setSelectedRange({
+      day,
+      startMinute: Math.min(anchor.minute, minute),
+      endMinute: Math.max(anchor.minute, minute),
+    });
+  };
 
   // 요일 배열
   const days = ['월요일', '화요일', '수요일', '목요일', '금요일'];
@@ -50,7 +109,7 @@ const TimeTableOTL: React.FC = () => {
 
   return (
     <div className="w-full max-w-full overflow-x-auto p-4">
-      <div className="flex w-full border border-gray-200 overflow-hidden">
+      <div ref={timetableSurface} className="flex w-full border border-gray-200 overflow-hidden">
         {/* 시간 라벨 영역 */}
         <div className="min-w-[40px] border-r border-gray-200 flex flex-col flex-shrink-0">
           <div className="h-[30px] border-b border-gray-200 flex items-center justify-center"></div>
@@ -91,9 +150,9 @@ const TimeTableOTL: React.FC = () => {
               const isHourLine = index % 2 === 0;
               const isBoldLine = (hour === 12 || hour === 18 || hour === 0 || hour === 24);
 
-              // -------------- Implementation (optional) --------------
-
-              // ------------------------------------------------------
+              const isSelected = selectedRange?.day === dayIndex &&
+                totalMinutes >= selectedRange.startMinute &&
+                totalMinutes <= selectedRange.endMinute;
 
               return (
                 <React.Fragment key={`cell-${dayIndex}-${index}`}>
@@ -113,17 +172,13 @@ const TimeTableOTL: React.FC = () => {
 
                   {/* 시간 셀 */}
                   <div
-                    className={`h-[20px] relative cursor-pointer hover:bg-[#e54c65] 
-                        ${  // ---------- implement here ----------
-                      ''
-                      // ------------------------------------
-                      }
-                    `}
+                    className={`h-[20px] relative cursor-pointer hover:bg-[#e54c65] ${
+                      isSelected ? 'bg-[#e54c65]' : ''
+                    }`}
                     data-day={dayIndex}
                     data-minute={totalMinutes}
-                  // ---------- implement here ----------
-
-                  // ------------------------------------
+                    onMouseDown={(mouseEvent) => startSelecting(mouseEvent, dayIndex, totalMinutes)}
+                    onMouseEnter={(mouseEvent) => extendSelection(mouseEvent, dayIndex, totalMinutes)}
                   ></div>
                 </React.Fragment>
               );
