@@ -9,11 +9,16 @@ type SelectedTimeRange = {
   endMinute: number;
 };
 
+const rainbowGradient = 'linear-gradient(to bottom, #f8bacb, #ffdbb5, #fff0b8, #c6eecd, #bde7f2, #c6d0fb, #e1c8f5)';
+
 const TimeTableOTL: React.FC = () => {
 
   const [selectedRange, setSelectedRange] = useState<SelectedTimeRange | null>(null);
   const dragAnchor = useRef<{ day: number; minute: number } | null>(null);
   const timetableSurface = useRef<HTMLDivElement>(null);
+  const selectedSlotCount = selectedRange
+    ? (selectedRange.endMinute - selectedRange.startMinute) / 30 + 1
+    : 1;
 
   useEffect(() => {
     const finishDragging = () => {
@@ -153,6 +158,11 @@ const TimeTableOTL: React.FC = () => {
               const isSelected = selectedRange?.day === dayIndex &&
                 totalMinutes >= selectedRange.startMinute &&
                 totalMinutes <= selectedRange.endMinute;
+              const joinsSelection = isSelected && selectedRange !== null && totalMinutes > selectedRange.startMinute;
+              const separatorHeight = isBoldLine ? 2 : 1;
+              const colorPosition = isSelected && selectedRange && selectedRange.endMinute !== selectedRange.startMinute
+                ? (totalMinutes - selectedRange.startMinute) / (selectedRange.endMinute - selectedRange.startMinute) * 100
+                : 0;
 
               return (
                 <React.Fragment key={`cell-${dayIndex}-${index}`}>
@@ -172,9 +182,14 @@ const TimeTableOTL: React.FC = () => {
 
                   {/* 시간 셀 */}
                   <div
-                    className={`h-[20px] relative cursor-pointer hover:bg-[#e54c65] ${
-                      isSelected ? 'bg-[#e54c65]' : ''
-                    }`}
+                    className="h-[20px] relative cursor-pointer hover:bg-pink-100"
+                    style={isSelected ? {
+                      backgroundImage: rainbowGradient,
+                      backgroundSize: `100% ${selectedSlotCount * 100}%`,
+                      backgroundPosition: `center ${colorPosition}%`,
+                      marginTop: joinsSelection ? -separatorHeight : undefined,
+                      height: joinsSelection ? 20 + separatorHeight : undefined,
+                    } : undefined}
                     data-day={dayIndex}
                     data-minute={totalMinutes}
                     onMouseDown={(mouseEvent) => startSelecting(mouseEvent, dayIndex, totalMinutes)}
