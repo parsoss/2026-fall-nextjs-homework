@@ -42,10 +42,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }
 }
 
-export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
     // For PUT we require a full resource shape (except id)
     try {
-        const id = parseId(ctx.params?.id);
+        const id = parseId((await params)?.id);
         if (id == null) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
         const body = (await req.json()) as NewQuotePayload;
         if (!body || !body.author || !body.display_author || !body.message || typeof body.year !== 'number') {
